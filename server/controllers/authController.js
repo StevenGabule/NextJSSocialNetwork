@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const passport = require("passport");
 const User = mongoose.model('User');
 
 exports.validateSignup = (req, res, next) => {
@@ -26,7 +27,7 @@ exports.validateSignup = (req, res, next) => {
 };
 
 exports.signup = async (req, res) => {
-    const {name , email, password} = req.body;
+    const {name, email, password} = req.body;
     const user = await new User({name, email, password});
     await User.register(user, password, (err, user) => {
         if (err) {
@@ -36,7 +37,21 @@ exports.signup = async (req, res) => {
     })
 };
 
-exports.signin = () => {
+exports.signin = (req, res, next) => {
+    passport.authenticate('local', (err, user, info) => {
+        if (err) {
+            return res.status(500).json(err.message);
+        }
+        if (!user) {
+            return res.status(400).json(info.message)
+        }
+        req.login(user, err => {
+            if (err) {
+                return res.status(500).json(err.message);
+            }
+            res.json(user);
+        })
+    })(req, res, next);
 };
 
 exports.signout = () => {
